@@ -16,7 +16,7 @@ def send_message():
         msg = Message(sender_id=sender.id, receiver_id=receiver.id, content=content)
         db.session.add(msg)
         db.session.commit()
-        return jsonify({'status':'success'}), 200
+        return jsonify({'status':'successful'}), 200
     return jsonify({'status':'error'}), 400
 
 @api.route('/messages/<username>', methods=['GET'])
