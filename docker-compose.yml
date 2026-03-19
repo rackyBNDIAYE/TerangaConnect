@@ -1,0 +1,33 @@
+
+
+services:
+  web1:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    networks:
+      - devnet-network
+
+  web2:
+    build: .
+    ports:
+      - "5001:5000"
+    depends_on:
+      - db
+    networks:
+      - devnet-network
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chatdb
+    ports:
+      - "3306:3306"
+    networks:
+      - devnet-network
+
+networks:
+  devnet-network:

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring — DevNet</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="/">Dev<span>Net</span></a>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h16M3 12h16M3 18h16"/></svg>
+  </button>
+  <div class="nav-links">
+    <a href="/chat">💬 Chat</a>
+    <a href="/">Accueil</a>
+  </div>
+</nav>
+
+<div class="monitor-layout">
+
+  <div class="page-header">
+    <h1>⚡ Monitoring</h1>
+    <p>État en temps réel du système DevNet</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="monitor-grid" id="monitorGrid" data-users="{{ users_count }}" data-msgs="{{ messages_count }}">
+    <div class="stat-card">
+      <div class="stat-value" id="countUsers">0</div>
+      <div class="stat-label">Utilisateurs</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="barUsers" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="countMsgs">0</div>
+      <div class="stat-label">Messages</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="barMsgs" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">État des services</span>
+    </div>
+    <div class="card-body">
+      <div class="status-list">
+        <div class="status-item">
+          <span class="status-dot"></span>
+          Communication Flask ↔ MySQL opérationnelle
+        </div>
+        <div class="status-item">
+          <span class="status-dot"></span>
+          Conteneurs Docker actifs
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px; text-align:center;">
+    <a href="/" class="btn btn-ghost">← Retour à l'accueil</a>
+  </div>
+
+</div>
+
+<script>
+  // Compteurs animés — valeurs lues depuis les data-attributes HTML
+  const grid = document.getElementById('monitorGrid');
+  const usersTarget = parseInt(grid.dataset.users) || 0;
+  const msgsTarget  = parseInt(grid.dataset.msgs)  || 0;
+
+  function animateCount(el, target, barEl) {
+    let start = 0;
+    const duration = 900;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      el.textContent = Math.round(start);
+      if (barEl) barEl.style.width = Math.min((start / Math.max(target, 1)) * 100, 100) + '%';
+      if (start >= target) clearInterval(timer);
+    }, 16);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    animateCount(document.getElementById('countUsers'), usersTarget, document.getElementById('barUsers'));
+    animateCount(document.getElementById('countMsgs'),  msgsTarget,  document.getElementById('barMsgs'));
+  });
+</script>
+
+</body>
+</html>
