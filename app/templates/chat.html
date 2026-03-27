@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat — DevNet</title>
+  <title>Chat — TerangaConnect</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
 <nav>
-  <a class="brand" href="/">Dev<span>Net</span></a>
+  <a class="brand" href="/">Teranga<span>Connect</span></a>
   <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h16M3 12h16M3 18h16"/></svg>
   </button>
@@ -27,24 +27,27 @@
       <span class="card-title">💬 Nouveau message</span>
     </div>
     <div class="card-body">
-      <form method="post" onsubmit="this.querySelector('.btn').classList.add('loading')">
+      <form method="post" onsubmit="return validateForm(this)">
         <div class="compose-grid">
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">De</label>
-            <select name="sender" class="form-control">
+            <select name="sender" id="senderSelect" class="form-control" onchange="filterReceiver()">
               {% for user in users %}
-              <option value="{{ user.username }}">{{ user.username }}</option>
+              <option value="{{ user.username }}" {% if user.username == current_user %}selected{% endif %}>{{ user.username }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">À</label>
-            <select name="receiver" class="form-control">
+            <select name="receiver" id="receiverSelect" class="form-control">
               {% for user in users %}
               <option value="{{ user.username }}">{{ user.username }}</option>
               {% endfor %}
             </select>
           </div>
+        </div>
+        <div id="selfMsgError" style="display:none; color:#e74c3c; font-size:0.85rem; margin-top:8px;">
+          ⚠️ Vous ne pouvez pas vous envoyer un message à vous-même.
         </div>
         <div class="compose-row" style="margin-top:14px; display:flex; gap:10px;">
           <input class="form-control" type="text" name="message" placeholder="Écrivez votre message…" required>
@@ -64,7 +67,6 @@
     {% if messages %}
     <div class="message-list" id="messageList">
       {% for m in messages %}
-      {# Alterne: messages pairs = reçus (gauche), impairs = envoyés (droite) #}
       {% set is_sent = loop.index % 2 == 0 %}
       <div class="message {{ 'sent' if is_sent else 'received' }}">
         <div class="msg-avatar">{{ m.sender[0]|upper }}</div>
@@ -90,6 +92,49 @@
   // Auto-scroll vers le dernier message
   const list = document.getElementById('messageList');
   if (list) list.scrollTop = list.scrollHeight;
+
+  // Filtre le destinataire : retire l'expéditeur de la liste "À"
+  function filterReceiver() {
+    const sender = document.getElementById('senderSelect').value;
+    const receiverSelect = document.getElementById('receiverSelect');
+    const options = receiverSelect.querySelectorAll('option');
+    let firstVisible = null;
+
+    options.forEach(opt => {
+      if (opt.value === sender) {
+        opt.disabled = true;
+        opt.style.display = 'none';
+        if (receiverSelect.value === sender) receiverSelect.value = '';
+      } else {
+        opt.disabled = false;
+        opt.style.display = '';
+        if (!firstVisible) firstVisible = opt.value;
+      }
+    });
+
+    // Sélectionne automatiquement le premier destinataire valide
+    if (receiverSelect.value === sender || receiverSelect.value === '') {
+      receiverSelect.value = firstVisible || '';
+    }
+  }
+
+  // Validation côté client avant envoi
+  function validateForm(form) {
+    const sender = form.querySelector('[name="sender"]').value;
+    const receiver = form.querySelector('[name="receiver"]').value;
+    const errDiv = document.getElementById('selfMsgError');
+
+    if (sender === receiver) {
+      errDiv.style.display = 'block';
+      return false;
+    }
+    errDiv.style.display = 'none';
+    form.querySelector('.btn').classList.add('loading');
+    return true;
+  }
+
+  // Initialiser le filtre au chargement
+  document.addEventListener('DOMContentLoaded', filterReceiver);
 </script>
 
 </body>

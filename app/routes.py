@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from . import db
 from .models import User, Message
 
@@ -32,6 +32,18 @@ def chat():
         receiver = request.form['receiver']
         content = request.form['message']
 
+        # Bloquer l'envoi à soi-même
+        if sender == receiver:
+            messages = _get_formatted_messages()
+            users = User.query.all()
+            return render_template(
+                'chat.html',
+                messages=messages,
+                users=users,
+                current_user=session.get('username', users[0].username if users else ""),
+                error="Vous ne pouvez pas vous envoyer un message à vous-même."
+            )
+
         sender_user = User.query.filter_by(username=sender).first()
         receiver_user = User.query.filter_by(username=receiver).first()
 
@@ -44,30 +56,30 @@ def chat():
             db.session.add(msg)
             db.session.commit()
 
-    # 🔥 Récupération des messages
-    messages = Message.query.all()
+    messages = _get_formatted_messages()
     users = User.query.all()
 
-    # 🔥 Transformation pour afficher les noms
-    formatted_messages = []
+    return render_template(
+        'chat.html',
+        messages=messages,
+        users=users,
+        current_user=session.get('username', users[0].username if users else "")
+    )
 
+
+def _get_formatted_messages():
+    messages = Message.query.all()
+    formatted_messages = []
     for m in messages:
         sender = User.query.get(m.sender_id)
         receiver = User.query.get(m.receiver_id)
-
         formatted_messages.append({
             'sender': sender.username,
             'receiver': receiver.username,
             'content': m.content,
             'timestamp': m.timestamp
         })
-
-    return render_template(
-    'chat.html',
-    messages=formatted_messages,
-    users=users,
-    current_user=users[0].username if users else ""
-)
+    return formatted_messages
 
 
 @main.route('/monitor')
@@ -87,6 +99,7 @@ def login():
         user = User.query.filter_by(username=username, password=password).first()
 
         if user:
+            session['username'] = user.username
             return redirect(url_for('main.chat'))
         else:
             return "Utilisateur ou mot de passe incorrect"
